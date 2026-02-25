@@ -1,14 +1,9 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect } from 'react'
+import { useSectionPin, gsap } from '@/hooks/use-gsap'
 import { SectionHeading } from '@/components/section-heading'
 import { Lightbulb, Gauge, Code, TestTube, Eye, GraduationCap, Puzzle } from 'lucide-react'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 const DIFFERENTIATORS = [
   { icon: Lightbulb, text: 'Strong frontend architecture mindset', color: 'oklch(0.65 0.25 260)' },
@@ -21,66 +16,75 @@ const DIFFERENTIATORS = [
 ]
 
 export function DifferentiatorsSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const { sectionRef, timelineRef, isMobile } = useSectionPin({ pinDuration: '+=110%' })
 
   useEffect(() => {
+    if (!sectionRef.current) return
+
     const ctx = gsap.context(() => {
-      const items = sectionRef.current?.querySelectorAll('.diff-item')
-      if (!items) return
+      const items = sectionRef.current!.querySelectorAll('.diff-item')
+      const iconBars = sectionRef.current!.querySelectorAll('.diff-icon-bar')
 
-      // Horizontal clip-path wipe reveal per item
-      items.forEach((item, i) => {
-        gsap.fromTo(
-          item,
-          {
-            clipPath: 'inset(0 100% 0 0)',
-            opacity: 0,
-          },
-          {
-            clipPath: 'inset(0 0% 0 0)',
-            opacity: 1,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: item,
-              start: 'top 90%',
-              end: 'top 70%',
-              scrub: 1,
-            },
-          }
-        )
-      })
+      if (isMobile) {
+        // Mobile: simple clip-path wipe
+        items.forEach((item) => {
+          gsap.fromTo(item,
+            { clipPath: 'inset(0 100% 0 0)', opacity: 0 },
+            {
+              clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 1, ease: 'power3.out',
+              scrollTrigger: { trigger: item, start: 'top 90%', once: true },
+            }
+          )
+        })
+        iconBars.forEach((bar) => {
+          gsap.fromTo(bar,
+            { scaleX: 0 },
+            {
+              scaleX: 1, transformOrigin: 'left', duration: 1, ease: 'power2.out',
+              scrollTrigger: { trigger: bar, start: 'top 85%', once: true },
+            }
+          )
+        })
+        return
+      }
 
-      // Icon bar progress animation
-      const iconBars = sectionRef.current?.querySelectorAll('.diff-icon-bar')
-      iconBars?.forEach((bar) => {
-        gsap.fromTo(
-          bar,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            transformOrigin: 'left',
-            duration: 1,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: bar,
-              start: 'top 85%',
-              once: true,
-            },
-          }
-        )
-      })
+      // Desktop: pinned timeline — horizontal clip-path wipe per item, staggered
+      const tl = timelineRef.current
+      const heading = sectionRef.current!.querySelector('.section-heading')
+
+      // Heading
+      if (heading) {
+        gsap.set(heading, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(heading, { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.12, ease: 'power3.out' }, 0)
+      }
+
+      // Items wipe in staggered
+      if (items.length > 0) {
+        gsap.set(items, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(items, {
+          clipPath: 'inset(0 0% 0 0)', opacity: 1,
+          stagger: 0.08, duration: 0.8, ease: 'power3.out',
+        }, 0.12)
+      }
+
+      // Icon bars draw in
+      if (iconBars.length > 0) {
+        gsap.set(iconBars, { scaleX: 0, transformOrigin: 'left' })
+        tl.to(iconBars, {
+          scaleX: 1, stagger: 0.08, duration: 0.5, ease: 'power2.out',
+        }, 0.25)
+      }
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isMobile, sectionRef, timelineRef])
 
   return (
-    <section ref={sectionRef} id="differentiators" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} id="differentiators" className="relative min-h-screen flex items-center px-6 md:px-12 lg:px-24 overflow-hidden">
       {/* Aurora background */}
       <div className="aurora-bg" />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto w-full py-20">
         <SectionHeading number="06" title="What Sets Me Apart" subtitle="The difference I bring" />
 
         <div className="space-y-4">

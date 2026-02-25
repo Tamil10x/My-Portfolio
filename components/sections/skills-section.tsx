@@ -1,13 +1,8 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect } from 'react'
+import { useSectionPin, gsap } from '@/hooks/use-gsap'
 import { SectionHeading } from '@/components/section-heading'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 const SKILL_CATEGORIES = [
   { title: 'Frontend Frameworks', skills: ['React.js', 'Next.js', 'React Native', 'Flutter'], color: 'oklch(0.65 0.25 260)' },
@@ -21,90 +16,94 @@ const SKILL_CATEGORIES = [
 ]
 
 export function SkillsSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const { sectionRef, timelineRef, isMobile } = useSectionPin({ pinDuration: '+=150%' })
 
   useEffect(() => {
     if (!sectionRef.current) return
 
     const ctx = gsap.context(() => {
       const cards = sectionRef.current!.querySelectorAll('.skill-category')
-
-      // Cinematic staggered cascade — each card from different angle with 3D depth
-      cards.forEach((card, i) => {
-        const col = i % 4
-        const row = Math.floor(i / 4)
-
-        gsap.fromTo(
-          card,
-          {
-            y: 80 + row * 20,
-            opacity: 0,
-            scale: 0.8,
-            rotateY: (col - 1.5) * 8,
-            rotateX: 5,
-            filter: 'blur(8px)',
-            transformPerspective: 1000,
-          },
-          {
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            rotateY: 0,
-            rotateX: 0,
-            filter: 'blur(0px)',
-            duration: 1.2,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: card,
-              start: 'top 92%',
-              once: true,
-            },
-            delay: i * 0.1,
-          }
-        )
-      })
-
-      // Skill pills pop in sequentially per card
       const pillRows = sectionRef.current!.querySelectorAll('.skill-pills')
+      const bgGlow = sectionRef.current!.querySelector('.skills-bg-glow')
+
+      if (isMobile) {
+        // Mobile: simple entrance animations
+        cards.forEach((card, i) => {
+          gsap.fromTo(card,
+            { y: 80, opacity: 0, scale: 0.8, filter: 'blur(8px)' },
+            {
+              y: 0, opacity: 1, scale: 1, filter: 'blur(0px)',
+              duration: 1.2, ease: 'power3.out',
+              scrollTrigger: { trigger: card, start: 'top 92%', once: true }, delay: i * 0.1,
+            }
+          )
+        })
+        pillRows.forEach((row, rowIdx) => {
+          const pills = row.querySelectorAll('.skill-pill')
+          gsap.fromTo(pills, { scale: 0, opacity: 0 }, {
+            scale: 1, opacity: 1, stagger: 0.06, duration: 0.5, ease: 'back.out(2)',
+            scrollTrigger: { trigger: row, start: 'top 92%', once: true }, delay: rowIdx * 0.1 + 0.3,
+          })
+        })
+        return
+      }
+
+      // Desktop: pinned timeline choreography
+      const tl = timelineRef.current
+      const heading = sectionRef.current!.querySelector('.section-heading')
+
+      // 0→0.15: Section heading animates in
+      if (heading) {
+        gsap.set(heading, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(heading, { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.15, ease: 'power3.out' }, 0)
+      }
+
+      // 0.15→0.8: Cards cascade in with 3D rotation
+      if (cards.length > 0) {
+        cards.forEach((card, i) => {
+          const col = i % 4
+          const row = Math.floor(i / 4)
+          gsap.set(card, {
+            y: 80 + row * 20, opacity: 0, scale: 0.8,
+            rotateY: (col - 1.5) * 8, rotateX: 5, filter: 'blur(8px)',
+            transformPerspective: 1000,
+          })
+        })
+        tl.to(cards, {
+          y: 0, opacity: 1, scale: 1, rotateY: 0, rotateX: 0, filter: 'blur(0px)',
+          stagger: 0.05, duration: 0.65, ease: 'power3.out',
+        }, 0.15)
+      }
+
+      // 0.3→0.9: Skill pills pop in sequentially per card (overlapping with cards)
       pillRows.forEach((row, rowIdx) => {
         const pills = row.querySelectorAll('.skill-pill')
-        gsap.fromTo(
-          pills,
-          { scale: 0, opacity: 0 },
-          {
-            scale: 1,
-            opacity: 1,
-            stagger: 0.06,
-            duration: 0.5,
-            ease: 'back.out(2)',
-            scrollTrigger: {
-              trigger: row,
-              start: 'top 92%',
-              once: true,
-            },
-            delay: rowIdx * 0.1 + 0.3,
-          }
-        )
+        if (pills.length > 0) {
+          gsap.set(pills, { scale: 0, opacity: 0 })
+          tl.to(pills, {
+            scale: 1, opacity: 1, stagger: 0.015, duration: 0.08, ease: 'back.out(2)',
+          }, 0.3 + rowIdx * 0.07)
+        }
       })
 
-      // Background glow parallax
-      gsap.to('.skills-bg-glow', {
-        yPercent: -30,
-        scale: 1.5,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 2,
-        },
-      })
+      // 0.8→1.0: Background glow pulses
+      if (bgGlow) {
+        tl.fromTo(bgGlow, { opacity: 0.05, scale: 1 }, {
+          opacity: 0.12, scale: 1.5, duration: 0.2, ease: 'power2.inOut',
+        }, 0.8)
+      }
+
+      // Deep parallax on background glow within timeline
+      if (bgGlow) {
+        tl.to(bgGlow, { yPercent: -30, duration: 1, ease: 'none' }, 0)
+      }
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isMobile, sectionRef, timelineRef])
 
   return (
-    <section ref={sectionRef} id="skills" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} id="skills" className="relative min-h-screen flex items-center px-6 md:px-12 lg:px-24 overflow-hidden">
       {/* Aurora background */}
       <div className="aurora-bg" />
 
@@ -117,7 +116,7 @@ export function SkillsSection() {
         }}
       />
 
-      <div className="max-w-6xl mx-auto relative">
+      <div className="max-w-6xl mx-auto relative w-full py-20">
         <SectionHeading number="02" title="Technical Arsenal" subtitle="Technologies I architect with" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

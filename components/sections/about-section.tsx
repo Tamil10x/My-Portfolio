@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useSectionPin, gsap, ScrollTrigger } from '@/hooks/use-gsap'
 import { SectionHeading } from '@/components/section-heading'
 import { Code2, Users, Rocket, Zap } from 'lucide-react'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 const STATS = [
   { icon: Code2, value: '3+', label: 'Years Experience', color: 'oklch(0.65 0.25 260)' },
@@ -18,107 +13,100 @@ const STATS = [
 ]
 
 export function AboutSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const { sectionRef, timelineRef, isMobile } = useSectionPin({ pinDuration: '+=120%' })
   const cardsRef = useRef<HTMLDivElement>(null)
   const textBlockRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Text block clip-path reveal (wipe up)
-      gsap.fromTo(
-        textBlockRef.current,
-        { clipPath: 'inset(100% 0 0 0)', opacity: 0 },
-        {
-          clipPath: 'inset(0% 0 0 0)',
-          opacity: 1,
-          duration: 1.5,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: textBlockRef.current,
-            start: 'top 85%',
-            end: 'top 40%',
-            scrub: 1,
-          },
-        }
-      )
+    if (!sectionRef.current) return
 
-      // Text paragraphs stagger in
-      const paragraphs = textBlockRef.current?.querySelectorAll('.about-para')
-      if (paragraphs) {
+    const ctx = gsap.context(() => {
+      if (isMobile) {
+        // Mobile fallback: simple entrance animations
         gsap.fromTo(
-          paragraphs,
-          { y: 50, opacity: 0, filter: 'blur(5px)' },
+          textBlockRef.current,
+          { clipPath: 'inset(100% 0 0 0)', opacity: 0 },
           {
-            y: 0,
+            clipPath: 'inset(0% 0 0 0)',
             opacity: 1,
-            filter: 'blur(0px)',
-            stagger: 0.2,
-            duration: 1,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: textBlockRef.current,
-              start: 'top 75%',
-              once: true,
-            },
+            duration: 1.5,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: textBlockRef.current, start: 'top 85%', once: true },
           }
         )
-      }
 
-      // Tags fly in from different directions
-      const tags = sectionRef.current?.querySelectorAll('.about-tag')
-      if (tags) {
-        tags.forEach((tag, i) => {
-          gsap.fromTo(
-            tag,
-            { scale: 0, opacity: 0, rotation: (i % 2 === 0 ? -15 : 15) },
-            {
-              scale: 1,
-              opacity: 1,
-              rotation: 0,
-              duration: 0.6,
-              ease: 'back.out(2)',
-              scrollTrigger: {
-                trigger: tag,
-                start: 'top 90%',
-                once: true,
-              },
-              delay: i * 0.08,
-            }
-          )
-        })
-      }
+        const paragraphs = textBlockRef.current?.querySelectorAll('.about-para')
+        if (paragraphs) {
+          gsap.fromTo(paragraphs, { y: 50, opacity: 0 }, {
+            y: 0, opacity: 1, stagger: 0.2, duration: 1, ease: 'power2.out',
+            scrollTrigger: { trigger: textBlockRef.current, start: 'top 75%', once: true },
+          })
+        }
 
-      // Cards stagger with 3D tilt
-      if (cardsRef.current) {
-        const cards = cardsRef.current.querySelectorAll('.stat-card')
-        cards.forEach((card, i) => {
-          gsap.fromTo(
-            card,
-            {
-              y: 120,
-              opacity: 0,
-              scale: 0.8,
-              rotateY: i % 2 === 0 ? -15 : 15,
-              transformPerspective: 800,
-            },
-            {
-              y: 0,
-              opacity: 1,
-              scale: 1,
-              rotateY: 0,
-              duration: 1,
-              ease: 'back.out(1.4)',
-              scrollTrigger: {
-                trigger: cardsRef.current,
-                start: 'top 80%',
-                once: true,
-              },
-              delay: i * 0.15,
-            }
-          )
+        const tags = sectionRef.current?.querySelectorAll('.about-tag')
+        tags?.forEach((tag, i) => {
+          gsap.fromTo(tag, { scale: 0, opacity: 0 }, {
+            scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(2)',
+            scrollTrigger: { trigger: tag, start: 'top 90%', once: true }, delay: i * 0.08,
+          })
         })
 
-        // Counter animation for stat values with elastic spring easing
+        if (cardsRef.current) {
+          const cards = cardsRef.current.querySelectorAll('.stat-card')
+          cards.forEach((card, i) => {
+            gsap.fromTo(card, { y: 80, opacity: 0, scale: 0.8 }, {
+              y: 0, opacity: 1, scale: 1, duration: 1, ease: 'back.out(1.4)',
+              scrollTrigger: { trigger: cardsRef.current, start: 'top 80%', once: true }, delay: i * 0.15,
+            })
+          })
+        }
+        return
+      }
+
+      // Desktop: pinned timeline choreography
+      const tl = timelineRef.current
+      const heading = sectionRef.current!.querySelector('.section-heading')
+      const paragraphs = textBlockRef.current?.querySelectorAll('.about-para')
+      const tags = sectionRef.current!.querySelectorAll('.about-tag')
+      const cards = cardsRef.current?.querySelectorAll('.stat-card')
+
+      // 0→0.2: Section heading wipes in
+      if (heading) {
+        gsap.set(heading, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(heading, { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.2, ease: 'power3.out' }, 0)
+      }
+
+      // 0.2→0.5: Text paragraphs stagger up with blur clear
+      if (textBlockRef.current) {
+        gsap.set(textBlockRef.current, { clipPath: 'inset(0% 0 0 0)', opacity: 1 })
+      }
+      if (paragraphs && paragraphs.length > 0) {
+        gsap.set(paragraphs, { y: 50, opacity: 0, filter: 'blur(5px)' })
+        tl.to(paragraphs, {
+          y: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.05, duration: 0.3, ease: 'power2.out',
+        }, 0.2)
+      }
+
+      // 0.5→0.7: Tags fly in with rotation
+      if (tags.length > 0) {
+        gsap.set(tags, { scale: 0, opacity: 0, rotation: (i: number) => (i % 2 === 0 ? -15 : 15) })
+        tl.to(tags, {
+          scale: 1, opacity: 1, rotation: 0, stagger: 0.02, duration: 0.2, ease: 'back.out(2)',
+        }, 0.5)
+      }
+
+      // 0.7→1.0: Stat cards flip in with 3D tilt
+      if (cards && cards.length > 0) {
+        gsap.set(cards, {
+          y: 120, opacity: 0, scale: 0.8,
+          rotateY: (i: number) => (i % 2 === 0 ? -15 : 15),
+          transformPerspective: 800,
+        })
+        tl.to(cards, {
+          y: 0, opacity: 1, scale: 1, rotateY: 0, stagger: 0.04, duration: 0.3, ease: 'back.out(1.4)',
+        }, 0.7)
+
+        // Counter animation for stat values
         cards.forEach((card) => {
           const valueEl = card.querySelector('.stat-value')
           if (valueEl) {
@@ -127,57 +115,29 @@ export function AboutSection() {
             if (numMatch) {
               const targetNum = parseInt(numMatch[0])
               const suffix = originalText.replace(/\d+/, '')
-              ScrollTrigger.create({
-                trigger: card,
-                start: 'top 80%',
-                once: true,
-                onEnter: () => {
-                  gsap.from({ val: 0 }, {
-                    val: targetNum,
-                    duration: 2.5,
-                    ease: 'elastic.out(1, 0.5)',
-                    onUpdate: function () {
-                      valueEl.textContent = Math.round(this.targets()[0].val) + suffix
-                    },
-                  })
+              tl.from({ val: 0 }, {
+                val: targetNum,
+                duration: 0.25,
+                ease: 'power2.out',
+                onUpdate: function () {
+                  valueEl.textContent = Math.round(this.targets()[0].val) + suffix
                 },
-              })
+              }, 0.75)
             }
           }
         })
       }
 
-      // Parallax background elements with different speeds
-      gsap.to('.about-bg-circle-1', {
-        yPercent: -60,
-        xPercent: 20,
-        scale: 1.3,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 2,
-        },
-      })
-
-      gsap.to('.about-bg-circle-2', {
-        yPercent: -40,
-        xPercent: -15,
-        scale: 0.8,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 1.5,
-        },
-      })
+      // Deep parallax on background elements within pinned timeline
+      tl.to('.about-bg-circle-1', { yPercent: -30, scale: 1.2, duration: 1, ease: 'none' }, 0)
+      tl.to('.about-bg-circle-2', { yPercent: -20, scale: 0.9, duration: 1, ease: 'none' }, 0)
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isMobile, sectionRef, timelineRef])
 
   return (
-    <section ref={sectionRef} id="about" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} id="about" className="relative min-h-screen flex items-center px-6 md:px-12 lg:px-24 overflow-hidden">
       {/* Aurora background */}
       <div className="aurora-bg" />
 
@@ -196,7 +156,6 @@ export function AboutSection() {
           filter: 'blur(60px)',
         }}
       />
-      {/* Extra parallax code symbol layer */}
       <div
         className="about-bg-circle-1 absolute top-1/3 left-1/4 text-6xl font-mono pointer-events-none select-none"
         style={{ color: 'oklch(0.65 0.25 260)', opacity: 0.03 }}
@@ -210,7 +169,7 @@ export function AboutSection() {
         {'{ }'}
       </div>
 
-      <div className="max-w-6xl mx-auto relative">
+      <div className="max-w-6xl mx-auto relative w-full py-20">
         <SectionHeading number="01" title="About Me" subtitle="Who I am & what drives me" />
 
         <div className="grid md:grid-cols-2 gap-16 items-start">

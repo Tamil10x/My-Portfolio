@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useSectionPin, gsap, ScrollTrigger } from '@/hooks/use-gsap'
 import { SectionHeading } from '@/components/section-heading'
 import { ExternalLink, ArrowRight } from 'lucide-react'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 const PROJECTS = [
   {
@@ -74,7 +69,7 @@ function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index:
   const [isHovered, setIsHovered] = useState(false)
   const glowLineRef = useRef<HTMLDivElement>(null)
 
-  // 3D tilt on mouse move
+  // 3D tilt on mouse move (mouse interaction, not scroll-driven)
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return
     const rect = cardRef.current.getBoundingClientRect()
@@ -100,57 +95,10 @@ function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index:
     })
   }, [])
 
-  useEffect(() => {
-    if (!cardRef.current) return
-
-    const isEven = index % 2 === 0
-    gsap.fromTo(
-      cardRef.current,
-      {
-        y: 100,
-        x: isEven ? -50 : 50,
-        opacity: 0,
-        filter: 'blur(6px)',
-      },
-      {
-        y: 0,
-        x: 0,
-        opacity: 1,
-        filter: 'blur(0px)',
-        duration: 1.2,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: cardRef.current,
-          start: 'top 90%',
-          end: 'top 60%',
-          scrub: 1,
-        },
-      }
-    )
-
-    // Glow accent line traces top border on scroll
-    if (glowLineRef.current) {
-      gsap.fromTo(
-        glowLineRef.current,
-        { scaleX: 0, transformOrigin: 'left' },
-        {
-          scaleX: 1,
-          duration: 1.5,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: cardRef.current,
-            start: 'top 75%',
-            once: true,
-          },
-        }
-      )
-    }
-  }, [index])
-
   return (
     <div
       ref={cardRef}
-      className="group glass rounded-2xl overflow-hidden transition-shadow duration-500 cursor-pointer"
+      className="project-card group glass rounded-2xl overflow-hidden transition-shadow duration-500 cursor-pointer"
       style={{
         opacity: 0,
         boxShadow: isHovered ? `0 0 50px ${project.color}22, 0 20px 40px oklch(0 0 0 / 0.3)` : 'none',
@@ -163,7 +111,7 @@ function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index:
       {/* Top accent line — glowing trace */}
       <div
         ref={glowLineRef}
-        className="h-px"
+        className="project-glow-line h-px"
         style={{
           background: `linear-gradient(90deg, transparent, ${project.color}, transparent)`,
           boxShadow: `0 0 8px ${project.color}`,
@@ -224,29 +172,83 @@ function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index:
 }
 
 export function ProjectsSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const { sectionRef, timelineRef, isMobile } = useSectionPin({ pinDuration: '+=180%' })
 
   useEffect(() => {
+    if (!sectionRef.current) return
+
     const ctx = gsap.context(() => {
-      // Background glow parallax
-      gsap.to('.projects-bg-glow', {
-        yPercent: -50,
-        xPercent: 20,
-        scale: 1.5,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 2,
-        },
-      })
+      const cards = sectionRef.current!.querySelectorAll('.project-card')
+      const glowLines = sectionRef.current!.querySelectorAll('.project-glow-line')
+      const bgGlow = sectionRef.current!.querySelector('.projects-bg-glow')
+
+      if (isMobile) {
+        // Mobile: scrubbed entrance per card
+        cards.forEach((card, i) => {
+          const isEven = i % 2 === 0
+          gsap.fromTo(card,
+            { y: 100, x: isEven ? -50 : 50, opacity: 0, filter: 'blur(6px)' },
+            {
+              y: 0, x: 0, opacity: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out',
+              scrollTrigger: { trigger: card, start: 'top 90%', end: 'top 60%', scrub: 1 },
+            }
+          )
+        })
+        glowLines.forEach((line, i) => {
+          gsap.fromTo(line,
+            { scaleX: 0, transformOrigin: 'left' },
+            {
+              scaleX: 1, duration: 1.5, ease: 'power2.out',
+              scrollTrigger: { trigger: cards[i], start: 'top 75%', once: true },
+            }
+          )
+        })
+        return
+      }
+
+      // Desktop: pinned timeline — cards stagger in pairs
+      const tl = timelineRef.current
+      const heading = sectionRef.current!.querySelector('.section-heading')
+
+      // 0→0.1: Section heading
+      if (heading) {
+        gsap.set(heading, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(heading, { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.1, ease: 'power3.out' }, 0)
+      }
+
+      // 0.1→0.9: Project cards stagger in pairs with blur→clear + slide up
+      if (cards.length > 0) {
+        cards.forEach((card, i) => {
+          const isEven = i % 2 === 0
+          gsap.set(card, { y: 100, x: isEven ? -50 : 50, opacity: 0, filter: 'blur(6px)' })
+        })
+        tl.to(cards, {
+          y: 0, x: 0, opacity: 1, filter: 'blur(0px)',
+          stagger: 0.08, duration: 0.1, ease: 'power3.out',
+        }, 0.1)
+      }
+
+      // Glow lines trace as each card enters
+      if (glowLines.length > 0) {
+        glowLines.forEach((line) => {
+          gsap.set(line, { scaleX: 0, transformOrigin: 'left' })
+        })
+        tl.to(glowLines, {
+          scaleX: 1, stagger: 0.08, duration: 0.08, ease: 'power2.out',
+        }, 0.2)
+      }
+
+      // Background glow parallax within timeline
+      if (bgGlow) {
+        tl.to(bgGlow, { yPercent: -50, xPercent: 20, scale: 1.5, duration: 1, ease: 'none' }, 0)
+      }
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isMobile, sectionRef, timelineRef])
 
   return (
-    <section ref={sectionRef} id="projects" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} id="projects" className="relative min-h-screen flex items-center px-6 md:px-12 lg:px-24 overflow-hidden">
       {/* Aurora background */}
       <div className="aurora-bg" />
 
@@ -255,7 +257,7 @@ export function ProjectsSection() {
         style={{ background: 'radial-gradient(circle, oklch(0.55 0.28 200), transparent)', filter: 'blur(120px)' }}
       />
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto w-full py-20">
         <SectionHeading number="04" title="Projects" subtitle="What I have built" />
         <div className="grid md:grid-cols-2 gap-6">
           {PROJECTS.map((project, i) => (

@@ -115,7 +115,7 @@ export function SectionHeading({
   const titleChars = title.split('')
 
   return (
-    <div ref={containerRef} className="mb-16 md:mb-24">
+    <div ref={containerRef} className="section-heading mb-16 md:mb-24">
       <div className="flex items-center gap-4 mb-4">
         <span className="sh-number text-sm font-mono tracking-wider gradient-text-animated">
           {number}

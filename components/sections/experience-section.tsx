@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useSectionPin, gsap, ScrollTrigger } from '@/hooks/use-gsap'
 import { SectionHeading } from '@/components/section-heading'
 import { MapPin, Calendar, TrendingUp, Bug, Smartphone } from 'lucide-react'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 const IMPACTS = [
   { icon: TrendingUp, text: 'Reduced application load time by 45%', value: 45, color: 'oklch(0.55 0.28 200)' },
@@ -28,181 +23,121 @@ const RESPONSIBILITIES = [
 ]
 
 export function ExperienceSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const { sectionRef, timelineRef, isMobile } = useSectionPin({ pinDuration: '+=130%' })
 
   useEffect(() => {
+    if (!sectionRef.current) return
+
     const ctx = gsap.context(() => {
-      // Timeline line draws itself on scroll
-      gsap.fromTo(
-        '.timeline-line',
-        { scaleY: 0 },
-        {
-          scaleY: 1,
-          transformOrigin: 'top',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 60%',
-            end: 'bottom 60%',
-            scrub: 1,
-          },
-        }
-      )
-
-      // Timeline milestone dots light up sequentially
-      const timelineDots = sectionRef.current?.querySelectorAll('.timeline-dot')
-      if (timelineDots) {
-        timelineDots.forEach((dot, i) => {
-          gsap.fromTo(
-            dot,
-            { scale: 0, opacity: 0 },
-            {
-              scale: 1,
-              opacity: 1,
-              duration: 0.8,
-              ease: 'back.out(3)',
-              scrollTrigger: {
-                trigger: dot,
-                start: 'top 70%',
-                once: true,
-              },
-              delay: i * 0.2,
-            }
-          )
-          // Glow pulse on scroll enter
-          gsap.fromTo(
-            dot,
-            { boxShadow: '0 0 0px oklch(0.65 0.25 260 / 0)' },
-            {
-              boxShadow: '0 0 25px oklch(0.65 0.25 260 / 0.8)',
-              duration: 0.6,
-              scrollTrigger: {
-                trigger: dot,
-                start: 'top 70%',
-                once: true,
-              },
-              delay: i * 0.2 + 0.3,
-            }
-          )
+      if (isMobile) {
+        // Mobile: simple entrance animations
+        gsap.fromTo('.timeline-line', { scaleY: 0 }, {
+          scaleY: 1, transformOrigin: 'top',
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 60%', end: 'bottom 60%', scrub: 1 },
         })
+        gsap.fromTo('.exp-card-main', { x: -100, opacity: 0 }, {
+          x: 0, opacity: 1, duration: 1.2, ease: 'power3.out',
+          scrollTrigger: { trigger: '.exp-card-main', start: 'top 80%', once: true },
+        })
+        const items = sectionRef.current?.querySelectorAll('.resp-item')
+        items?.forEach((item, i) => {
+          gsap.fromTo(item, { clipPath: 'inset(0 100% 0 0)', opacity: 0 }, {
+            clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.8, ease: 'power2.out',
+            scrollTrigger: { trigger: item, start: 'top 88%', once: true }, delay: i * 0.06,
+          })
+        })
+        gsap.fromTo('.exp-card-mentor', { x: 100, opacity: 0 }, {
+          x: 0, opacity: 1, duration: 1, ease: 'power3.out',
+          scrollTrigger: { trigger: '.exp-card-mentor', start: 'top 85%', once: true },
+        })
+        return
       }
 
-      // Experience card slides in
-      gsap.fromTo(
-        '.exp-card-main',
-        { x: -100, opacity: 0, rotateY: -8, transformPerspective: 1000 },
-        {
-          x: 0,
-          opacity: 1,
-          rotateY: 0,
-          duration: 1.2,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: '.exp-card-main',
-            start: 'top 80%',
-            end: 'top 50%',
-            scrub: 1,
-          },
-        }
-      )
+      // Desktop: pinned timeline choreography
+      const tl = timelineRef.current
+      const heading = sectionRef.current!.querySelector('.section-heading')
+      const timelineLine = sectionRef.current!.querySelector('.timeline-line')
+      const timelineDots = sectionRef.current!.querySelectorAll('.timeline-dot')
+      const expCard = sectionRef.current!.querySelector('.exp-card-main')
+      const respItems = sectionRef.current!.querySelectorAll('.resp-item')
+      const impactCards = sectionRef.current!.querySelectorAll('.impact-card')
+      const mentorCard = sectionRef.current!.querySelector('.exp-card-mentor')
 
-      // Responsibilities with clip-path left-wipe reveal
-      const items = sectionRef.current?.querySelectorAll('.resp-item')
-      if (items) {
-        items.forEach((item, i) => {
-          gsap.fromTo(
-            item,
-            { clipPath: 'inset(0 100% 0 0)', opacity: 0 },
-            {
-              clipPath: 'inset(0 0% 0 0)',
-              opacity: 1,
-              duration: 0.8,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: item,
-                start: 'top 88%',
-                once: true,
-              },
-              delay: i * 0.06,
-            }
-          )
-        })
+      // 0→0.15: Section heading
+      if (heading) {
+        gsap.set(heading, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(heading, { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.15, ease: 'power3.out' }, 0)
       }
 
-      // Impact cards with number counter animation
-      const impactCards = sectionRef.current?.querySelectorAll('.impact-card')
-      if (impactCards) {
-        impactCards.forEach((card, i) => {
-          gsap.fromTo(
-            card,
-            { y: 80, opacity: 0, scale: 0.8, rotateX: 15, transformPerspective: 600 },
-            {
-              y: 0,
-              opacity: 1,
-              scale: 1,
-              rotateX: 0,
-              duration: 1,
-              ease: 'back.out(1.5)',
-              scrollTrigger: {
-                trigger: card,
-                start: 'top 90%',
-                once: true,
-              },
-              delay: i * 0.15,
-            }
-          )
+      // 0.15→0.4: Company card slides in
+      if (expCard) {
+        gsap.set(expCard, { x: -100, opacity: 0, rotateY: -8, transformPerspective: 1000 })
+        tl.to(expCard, { x: 0, opacity: 1, rotateY: 0, duration: 0.25, ease: 'power3.out' }, 0.15)
+      }
 
-          // Counter animation for impact numbers
+      // 0.4→0.7: Timeline dots light up sequentially with glow
+      if (timelineLine) {
+        gsap.set(timelineLine, { scaleY: 0, transformOrigin: 'top' })
+        tl.to(timelineLine, { scaleY: 1, duration: 0.5, ease: 'none' }, 0.2)
+      }
+      if (timelineDots.length > 0) {
+        gsap.set(timelineDots, { scale: 0, opacity: 0 })
+        tl.to(timelineDots, {
+          scale: 1, opacity: 1, stagger: 0.05, duration: 0.1, ease: 'back.out(3)',
+        }, 0.4)
+        // Glow pulse
+        tl.to(timelineDots, {
+          boxShadow: '0 0 25px oklch(0.65 0.25 260 / 0.8)',
+          stagger: 0.05, duration: 0.08,
+        }, 0.5)
+      }
+
+      // 0.5→0.85: Responsibilities clip-path wipe from left
+      if (respItems.length > 0) {
+        gsap.set(respItems, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(respItems, {
+          clipPath: 'inset(0 0% 0 0)', opacity: 1, stagger: 0.03, duration: 0.35, ease: 'power2.out',
+        }, 0.5)
+      }
+
+      // 0.85→1.0: Impact stats counter animation
+      if (impactCards.length > 0) {
+        gsap.set(impactCards, { y: 80, opacity: 0, scale: 0.8, rotateX: 15, transformPerspective: 600 })
+        tl.to(impactCards, {
+          y: 0, opacity: 1, scale: 1, rotateX: 0, stagger: 0.03, duration: 0.12, ease: 'back.out(1.5)',
+        }, 0.82)
+
+        // Counter animation
+        impactCards.forEach((card) => {
           const numEl = card.querySelector('.impact-num')
           if (numEl) {
             const target = parseInt(numEl.getAttribute('data-target') || '0')
-            ScrollTrigger.create({
-              trigger: card,
-              start: 'top 85%',
-              once: true,
-              onEnter: () => {
-                gsap.from({ val: 0 }, {
-                  val: target,
-                  duration: 2,
-                  ease: 'power2.out',
-                  onUpdate: function () {
-                    numEl.textContent = Math.round(this.targets()[0].val) + '%'
-                  },
-                })
+            tl.from({ val: 0 }, {
+              val: target, duration: 0.12, ease: 'power2.out',
+              onUpdate: function () {
+                numEl.textContent = Math.round(this.targets()[0].val) + '%'
               },
-            })
+            }, 0.88)
           }
         })
       }
 
-      // Mentoring card slides from right
-      gsap.fromTo(
-        '.exp-card-mentor',
-        { x: 100, opacity: 0, rotateY: 8, transformPerspective: 1000 },
-        {
-          x: 0,
-          opacity: 1,
-          rotateY: 0,
-          duration: 1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: '.exp-card-mentor',
-            start: 'top 85%',
-            end: 'top 55%',
-            scrub: 1,
-          },
-        }
-      )
+      // Mentor card
+      if (mentorCard) {
+        gsap.set(mentorCard, { x: 100, opacity: 0, rotateY: 8, transformPerspective: 1000 })
+        tl.to(mentorCard, { x: 0, opacity: 1, rotateY: 0, duration: 0.15, ease: 'power3.out' }, 0.92)
+      }
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isMobile, sectionRef, timelineRef])
 
   return (
-    <section ref={sectionRef} id="experience" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} id="experience" className="relative min-h-screen flex items-center px-6 md:px-12 lg:px-24 overflow-hidden">
       {/* Aurora background */}
       <div className="aurora-bg" />
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto w-full py-20">
         <SectionHeading number="03" title="Experience" subtitle="Where I have been building" />
 
         <div className="relative flex gap-8">
@@ -214,7 +149,6 @@ export function ExperienceSection() {
                 background: 'linear-gradient(180deg, oklch(0.65 0.25 260), oklch(0.55 0.28 200), transparent)',
               }}
             />
-            {/* Milestone dots */}
             <div
               className="timeline-dot absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
               style={{ background: 'oklch(0.65 0.25 260)' }}

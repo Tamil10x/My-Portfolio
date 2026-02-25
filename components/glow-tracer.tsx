@@ -15,12 +15,35 @@ export function GlowTracer() {
     if (!tracerRef.current) return
 
     const ctx = gsap.context(() => {
+      // Height grows proportional to total scroll progress
       gsap.to(tracerRef.current, {
         scaleY: 1,
         ease: 'none',
         scrollTrigger: {
           trigger: document.body,
           start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.5,
+        },
+      })
+
+      // Color shifts from primary→accent→primary as you scroll
+      gsap.to(tracerRef.current, {
+        '--glow-hue': 200,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: document.body,
+          start: 'top top',
+          end: '50% 50%',
+          scrub: 0.5,
+        },
+      })
+      gsap.to(tracerRef.current, {
+        '--glow-hue': 260,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: document.body,
+          start: '50% 50%',
           end: 'bottom bottom',
           scrub: 0.5,
         },
@@ -36,7 +59,8 @@ export function GlowTracer() {
         ref={tracerRef}
         className="w-full h-full origin-top"
         style={{
-          background: 'linear-gradient(180deg, transparent, oklch(0.65 0.25 260 / 0.6), oklch(0.55 0.28 200 / 0.4), transparent)',
+          ['--glow-hue' as any]: 260,
+          background: 'linear-gradient(180deg, transparent, oklch(0.65 0.25 var(--glow-hue) / 0.6), oklch(0.55 0.28 var(--glow-hue) / 0.4), transparent)',
           boxShadow: '0 0 12px oklch(0.65 0.25 260 / 0.4), 0 0 24px oklch(0.65 0.25 260 / 0.2)',
           transform: 'scaleY(0)',
         }}

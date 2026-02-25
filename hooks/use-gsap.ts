@@ -3,9 +3,11 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
+  ScrollTrigger.config({ limitCallbacks: true })
 }
 
 export function useGsapScrollTrigger() {
@@ -119,6 +121,54 @@ export function useDepthBlurParallax(speed: number = 0.3) {
   }, [speed])
 
   return ref
+}
+
+/**
+ * Pins a section to the viewport and returns a GSAP timeline scrubbed to scroll progress.
+ * On mobile, returns no-op refs (no pinning, animations play as simple entrance effects).
+ */
+export function useSectionPin(options?: { pinDuration?: string; scrub?: number }) {
+  const sectionRef = useRef<HTMLElement>(null)
+  const timelineRef = useRef<gsap.core.Timeline>(gsap.timeline({ paused: true }))
+  const isMobile = useIsMobile()
+
+  useEffect(() => {
+    if (!sectionRef.current || isMobile) return
+
+    const pinDuration = options?.pinDuration || '+=100%'
+    const scrubValue = options?.scrub ?? 1
+
+    // Create a fresh timeline for this section
+    const tl = gsap.timeline({
+      defaults: { force3D: true },
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top top',
+        end: pinDuration,
+        pin: true,
+        anticipatePin: 1,
+        scrub: scrubValue,
+        fastScrollEnd: true,
+      },
+    })
+
+    timelineRef.current = tl
+
+    // Add will-change for GPU compositing during pin
+    const el = sectionRef.current
+    el.style.willChange = 'transform'
+
+    return () => {
+      tl.kill()
+      el.style.willChange = ''
+      // Kill only ScrollTriggers associated with this element
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === el && st.pin) st.kill()
+      })
+    }
+  }, [isMobile, options?.pinDuration, options?.scrub])
+
+  return { sectionRef, timelineRef, isMobile }
 }
 
 export { gsap, ScrollTrigger }

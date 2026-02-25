@@ -1,15 +1,10 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect } from 'react'
+import { useSectionPin, gsap } from '@/hooks/use-gsap'
 import { SectionHeading } from '@/components/section-heading'
 import { Github, Linkedin, Mail, FileText, ArrowUpRight } from 'lucide-react'
 import { useMagnetic } from '@/hooks/use-magnetic'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 const SOCIAL_LINKS = [
   { icon: Github, label: 'GitHub', href: 'https://github.com/tamilgithubid', desc: 'Check out my code', color: 'oklch(0.75 0.02 260)' },
@@ -54,126 +49,114 @@ const OPEN_TO = [
   'Startup Collaborations',
 ]
 
-// Key words that get scale pulse
 const PULSE_WORDS = ['technical', 'depth,', 'architectural', 'thinking,', 'UI', 'craftsmanship', 'connect.']
 
 export function ContactSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const { sectionRef, timelineRef, isMobile } = useSectionPin({ pinDuration: '+=80%' })
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Enhanced word-by-word reveal with scale pulse on key words
-      const ctaWords = sectionRef.current?.querySelectorAll('.cta-word')
-      if (ctaWords) {
-        gsap.fromTo(
-          ctaWords,
-          { opacity: 0.08, y: 30, filter: 'blur(4px)', scale: 0.9 },
-          {
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-            scale: 1,
-            stagger: 0.03,
-            scrollTrigger: {
-              trigger: '.contact-cta',
-              start: 'top 80%',
-              end: 'top 50%',
-              scrub: 1,
-            },
-          }
-        )
+    if (!sectionRef.current) return
 
-        // Scale pulse on key words after reveal
+    const ctx = gsap.context(() => {
+      const ctaWords = sectionRef.current!.querySelectorAll('.cta-word')
+      const contactLinks = sectionRef.current!.querySelectorAll('.contact-link')
+      const openItems = sectionRef.current!.querySelectorAll('.open-to-item')
+
+      if (isMobile) {
+        // Mobile: simple entrance animations
+        if (ctaWords.length > 0) {
+          gsap.fromTo(ctaWords,
+            { opacity: 0.08, y: 30, filter: 'blur(4px)', scale: 0.9 },
+            {
+              opacity: 1, y: 0, filter: 'blur(0px)', scale: 1, stagger: 0.03,
+              scrollTrigger: { trigger: '.contact-cta', start: 'top 80%', end: 'top 50%', scrub: 1 },
+            }
+          )
+        }
+        contactLinks.forEach((card, i) => {
+          const isLeft = i % 2 === 0
+          gsap.fromTo(card,
+            { x: isLeft ? -80 : 80, opacity: 0, scale: 0.9 },
+            {
+              x: 0, opacity: 1, scale: 1, duration: 1, ease: 'power3.out',
+              scrollTrigger: { trigger: card, start: 'top 88%', once: true },
+            }
+          )
+        })
+        if (openItems.length > 0) {
+          gsap.fromTo(openItems,
+            { scale: 0, opacity: 0, rotation: -10 },
+            {
+              scale: 1, opacity: 1, rotation: 0, stagger: 0.08, duration: 0.6, ease: 'back.out(2)',
+              scrollTrigger: { trigger: openItems[0], start: 'top 90%', once: true },
+            }
+          )
+        }
+        return
+      }
+
+      // Desktop: pinned timeline — word-by-word reveal with scale pulse on key words
+      const tl = timelineRef.current
+      const heading = sectionRef.current!.querySelector('.section-heading')
+
+      // Heading
+      if (heading) {
+        gsap.set(heading, { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
+        tl.to(heading, { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.1, ease: 'power3.out' }, 0)
+      }
+
+      // 0.1→0.5: CTA word-by-word reveal
+      if (ctaWords.length > 0) {
+        gsap.set(ctaWords, { opacity: 0.08, y: 30, filter: 'blur(4px)', scale: 0.9 })
+        tl.to(ctaWords, {
+          opacity: 1, y: 0, filter: 'blur(0px)', scale: 1, stagger: 0.01, duration: 0.4, ease: 'power2.out',
+        }, 0.1)
+
+        // Scale pulse on key words
         ctaWords.forEach((word) => {
           if (word.classList.contains('cta-pulse')) {
-            gsap.fromTo(
-              word,
-              { scale: 1 },
-              {
-                scale: 1.15,
-                duration: 0.3,
-                yoyo: true,
-                repeat: 1,
-                ease: 'power2.inOut',
-                scrollTrigger: {
-                  trigger: word,
-                  start: 'top 60%',
-                  toggleActions: 'play none none none',
-                },
-              }
-            )
+            tl.fromTo(word, { scale: 1 }, {
+              scale: 1.15, duration: 0.03, yoyo: true, repeat: 1, ease: 'power2.inOut',
+            }, 0.5)
           }
         })
       }
 
-      // Contact cards fly in from sides
-      const cards = sectionRef.current?.querySelectorAll('.contact-link')
-      cards?.forEach((card, i) => {
-        const isLeft = i % 2 === 0
-        gsap.fromTo(
-          card,
-          { x: isLeft ? -80 : 80, y: 40, opacity: 0, scale: 0.9, rotateY: isLeft ? -8 : 8, transformPerspective: 800 },
-          {
-            x: 0,
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            rotateY: 0,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: card,
-              start: 'top 88%',
-              end: 'top 65%',
-              scrub: 1,
-            },
-          }
-        )
-      })
+      // 0.5→0.8: Contact links fly in
+      if (contactLinks.length > 0) {
+        contactLinks.forEach((card, i) => {
+          const isLeft = i % 2 === 0
+          gsap.set(card, { x: isLeft ? -80 : 80, y: 40, opacity: 0, scale: 0.9, rotateY: isLeft ? -8 : 8, transformPerspective: 800 })
+        })
+        tl.to(contactLinks, {
+          x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0,
+          stagger: 0.04, duration: 0.25, ease: 'power3.out',
+        }, 0.5)
+      }
 
-      // Open-to items pop in
-      const openItems = sectionRef.current?.querySelectorAll('.open-to-item')
-      if (openItems) {
-        gsap.fromTo(
-          openItems,
-          { scale: 0, opacity: 0, rotation: -10 },
-          {
-            scale: 1,
-            opacity: 1,
-            rotation: 0,
-            stagger: 0.08,
-            duration: 0.6,
-            ease: 'back.out(2)',
-            scrollTrigger: {
-              trigger: openItems[0],
-              start: 'top 90%',
-              once: true,
-            },
-          }
-        )
+      // 0.8→1.0: Open-to items pop in
+      if (openItems.length > 0) {
+        gsap.set(openItems, { scale: 0, opacity: 0, rotation: -10 })
+        tl.to(openItems, {
+          scale: 1, opacity: 1, rotation: 0, stagger: 0.03, duration: 0.2, ease: 'back.out(2)',
+        }, 0.8)
       }
 
       // Background glow parallax
-      gsap.to('.contact-glow', {
-        yPercent: -30,
-        scale: 1.5,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 2,
-        },
-      })
+      const glow = sectionRef.current!.querySelector('.contact-glow')
+      if (glow) {
+        tl.to(glow, { yPercent: -30, scale: 1.5, duration: 1, ease: 'none' }, 0)
+      }
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isMobile, sectionRef, timelineRef])
 
   // Split CTA text into words
   const ctaText = "If you're looking for someone who combines technical depth, architectural thinking, and UI craftsmanship -- let's connect."
 
   return (
-    <section ref={sectionRef} id="contact" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} id="contact" className="relative min-h-screen flex items-center px-6 md:px-12 lg:px-24 overflow-hidden">
       {/* Aurora background */}
       <div className="aurora-bg" />
 
@@ -182,7 +165,7 @@ export function ContactSection() {
         style={{ background: 'radial-gradient(circle, oklch(0.65 0.25 260), transparent)', filter: 'blur(100px)' }}
       />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto w-full py-20">
         <SectionHeading number="07" title="Get In Touch" subtitle="Let's build something impactful" />
 
         <div className="contact-cta mb-16">

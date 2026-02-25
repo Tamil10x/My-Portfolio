@@ -1,32 +1,20 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
-import Lenis from 'lenis'
+import { useEffect } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 export function useLenis() {
-  const lenisRef = useRef<Lenis | null>(null)
-
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.4,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      touchMultiplier: 2,
-      infinite: false,
-    })
-
-    lenisRef.current = lenis
-
-    function raf(time: number) {
-      lenis.raf(time)
-      requestAnimationFrame(raf)
-    }
-
-    requestAnimationFrame(raf)
+    ScrollTrigger.config({ limitCallbacks: true })
+    ScrollTrigger.defaults({ scroller: document.documentElement })
 
     return () => {
-      lenis.destroy()
+      ScrollTrigger.getAll().forEach(t => t.kill())
     }
   }, [])
-
-  return lenisRef
 }
