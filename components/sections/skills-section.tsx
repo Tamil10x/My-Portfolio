@@ -24,50 +24,49 @@ export function SkillsSection() {
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      const cards = sectionRef.current?.querySelectorAll('.skill-category')
-      if (!cards) return
+    if (!sectionRef.current) return
 
-      // Each card enters from a different direction based on grid position
+    const ctx = gsap.context(() => {
+      const cards = sectionRef.current!.querySelectorAll('.skill-category')
+
+      // Cinematic staggered cascade — each card from different angle with 3D depth
       cards.forEach((card, i) => {
         const col = i % 4
         const row = Math.floor(i / 4)
-        const xStart = (col - 1.5) * 40
-        const yStart = 100 + row * 30
 
         gsap.fromTo(
           card,
           {
-            y: yStart,
-            x: xStart,
+            y: 80 + row * 20,
             opacity: 0,
-            scale: 0.85,
-            rotateY: (col - 1.5) * 10,
+            scale: 0.8,
+            rotateY: (col - 1.5) * 8,
             rotateX: 5,
+            filter: 'blur(8px)',
             transformPerspective: 1000,
           },
           {
             y: 0,
-            x: 0,
             opacity: 1,
             scale: 1,
             rotateY: 0,
             rotateX: 0,
+            filter: 'blur(0px)',
             duration: 1.2,
             ease: 'power3.out',
             scrollTrigger: {
-              trigger: sectionRef.current,
-              start: 'top 75%',
-              end: 'top 30%',
-              scrub: 1,
+              trigger: card,
+              start: 'top 92%',
+              once: true,
             },
+            delay: i * 0.1,
           }
         )
       })
 
-      // Skill pills wave animation
-      const pillRows = sectionRef.current?.querySelectorAll('.skill-pills')
-      pillRows?.forEach((row, i) => {
+      // Skill pills pop in sequentially per card
+      const pillRows = sectionRef.current!.querySelectorAll('.skill-pills')
+      pillRows.forEach((row, rowIdx) => {
         const pills = row.querySelectorAll('.skill-pill')
         gsap.fromTo(
           pills,
@@ -75,20 +74,20 @@ export function SkillsSection() {
           {
             scale: 1,
             opacity: 1,
-            stagger: 0.05,
+            stagger: 0.06,
             duration: 0.5,
             ease: 'back.out(2)',
             scrollTrigger: {
               trigger: row,
-              start: 'top 85%',
-              toggleActions: 'play none none reverse',
+              start: 'top 92%',
+              once: true,
             },
-            delay: i * 0.05,
+            delay: rowIdx * 0.1 + 0.3,
           }
         )
       })
 
-      // Parallax on background glow
+      // Background glow parallax
       gsap.to('.skills-bg-glow', {
         yPercent: -30,
         scale: 1.5,
@@ -106,6 +105,9 @@ export function SkillsSection() {
 
   return (
     <section ref={sectionRef} id="skills" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       {/* Background glow */}
       <div
         className="skills-bg-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-5"
@@ -115,22 +117,35 @@ export function SkillsSection() {
         }}
       />
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto relative">
         <SectionHeading number="02" title="Technical Arsenal" subtitle="Technologies I architect with" />
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {SKILL_CATEGORIES.map(({ title, skills, color }) => (
             <div
               key={title}
               className="skill-category glass rounded-2xl p-6 transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_0_40px_oklch(0.65_0.25_260_/_0.1)] group"
               style={{ opacity: 0 }}
             >
+              {/* Card top accent line */}
+              <div
+                className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
+              />
+
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-2 h-2 rounded-full transition-all duration-300 group-hover:scale-150 group-hover:shadow-[0_0_12px]" style={{ background: color, boxShadow: `0 0 10px ${color}` }} />
-                <h3 className="text-sm font-semibold tracking-wider uppercase transition-colors duration-300" style={{ color }}>
+                <div
+                  className="w-2.5 h-2.5 rounded-full transition-all duration-300 group-hover:scale-150"
+                  style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+                />
+                <h3
+                  className="text-sm font-semibold tracking-wider uppercase transition-colors duration-300"
+                  style={{ color }}
+                >
                   {title}
                 </h3>
               </div>
+
               <div className="skill-pills flex flex-wrap gap-2">
                 {skills.map((skill) => (
                   <span
@@ -140,6 +155,8 @@ export function SkillsSection() {
                       background: 'oklch(0.15 0.02 260)',
                       color: 'oklch(0.7 0.03 260)',
                       border: '1px solid oklch(0.22 0.03 260)',
+                      opacity: 0,
+                      transform: 'scale(0)',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = color

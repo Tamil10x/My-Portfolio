@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Github, Linkedin, Mail, ChevronDown, Play } from 'lucide-react'
+import { Github, Linkedin, Mail, ArrowRight } from 'lucide-react'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -14,13 +13,14 @@ export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const headingRef = useRef<HTMLDivElement>(null)
-  const imageRef = useRef<HTMLDivElement>(null)
   const subtitleRef = useRef<HTMLDivElement>(null)
   const ctaRef = useRef<HTMLDivElement>(null)
   const socialsRef = useRef<HTMLDivElement>(null)
   const scrollIndicatorRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
+  const typewriterRef = useRef<HTMLSpanElement>(null)
+  const nameRef = useRef<HTMLHeadingElement>(null)
   const [videoLoaded, setVideoLoaded] = useState(false)
 
   useEffect(() => {
@@ -34,7 +34,6 @@ export function HeroSection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // --- Entrance timeline ---
       const tl = gsap.timeline({ delay: 3.2 })
 
       // Video overlay fades to reveal
@@ -44,23 +43,75 @@ export function HeroSection() {
         ease: 'power2.out',
       })
 
-      // Image entrance - dramatic scale from large
+      // Code bracket decorations fade in
+      const brackets = sectionRef.current?.querySelectorAll('.hero-bracket')
+      if (brackets) {
+        tl.fromTo(
+          brackets,
+          { opacity: 0, scale: 0.5 },
+          { opacity: 1, scale: 1, stagger: 0.15, duration: 0.8, ease: 'back.out(2)' },
+          '-=1.5'
+        )
+      }
+
+      // Character cascade animation for name
+      const heroChars = sectionRef.current?.querySelectorAll('.hero-char')
+      if (heroChars) {
+        tl.fromTo(
+          heroChars,
+          { rotateX: -90, opacity: 0, y: 80, transformPerspective: 800 },
+          {
+            rotateX: 0,
+            opacity: 1,
+            y: 0,
+            stagger: 0.04,
+            duration: 1.4,
+            ease: 'power4.out',
+          },
+          '-=0.8'
+        )
+      }
+
+      // After name reveals, add glow effect
+      tl.add(() => {
+        if (nameRef.current) {
+          nameRef.current.classList.add('glow-text')
+        }
+      })
+
+      // Typewriter for "Senior Software Engineer"
+      tl.add(() => {
+        if (!typewriterRef.current) return
+        const text = 'Senior Software Engineer'
+        let i = 0
+        typewriterRef.current.textContent = ''
+        const timer = setInterval(() => {
+          if (typewriterRef.current && i < text.length) {
+            typewriterRef.current.textContent = text.slice(0, i + 1)
+            i++
+          } else {
+            clearInterval(timer)
+          }
+        }, 60)
+      }, '-=0.6')
+
+      // Typewriter container fade in
       tl.fromTo(
-        imageRef.current,
-        { scale: 1.5, opacity: 0, y: 80, filter: 'blur(20px)' },
-        { scale: 1, opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.8, ease: 'power4.out' },
-        '-=1.5'
+        sectionRef.current?.querySelector('.hero-typewriter'),
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+        '<'
       )
 
-      // Name lines reveal with 3D rotation
+      // "// React & Next.js Architect" code comment subtitle
       tl.fromTo(
-        '.hero-line',
-        { y: 140, opacity: 0, rotateX: -60, transformPerspective: 800 },
-        { y: 0, opacity: 1, rotateX: 0, stagger: 0.18, duration: 1.2, ease: 'power4.out' },
+        sectionRef.current?.querySelector('.hero-role-text'),
+        { y: 30, opacity: 0, x: -20 },
+        { y: 0, opacity: 1, x: 0, duration: 0.8, ease: 'power3.out' },
         '-=1'
       )
 
-      // Subtitle fade up
+      // Description paragraph fade up
       tl.fromTo(
         subtitleRef.current,
         { y: 40, opacity: 0, filter: 'blur(10px)' },
@@ -68,21 +119,38 @@ export function HeroSection() {
         '-=0.5'
       )
 
-      // CTA buttons scale in
-      tl.fromTo(
-        '.cta-btn',
-        { scale: 0.8, opacity: 0, y: 20 },
-        { scale: 1, opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: 'back.out(1.7)' },
-        '-=0.4'
-      )
+      // CTA buttons — staggered entrance with spring
+      const ctaBtns = sectionRef.current?.querySelectorAll('.cta-btn')
+      if (ctaBtns) {
+        tl.fromTo(
+          ctaBtns,
+          { scale: 0.8, opacity: 0, y: 30 },
+          { scale: 1, opacity: 1, y: 0, stagger: 0.2, duration: 1, ease: 'back.out(1.7)' },
+          '-=0.4'
+        )
+      }
+
+      // Arrow icon slide-in on View Projects button
+      const arrowIcon = sectionRef.current?.querySelector('.cta-arrow')
+      if (arrowIcon) {
+        tl.fromTo(
+          arrowIcon,
+          { x: -10, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+          '-=0.5'
+        )
+      }
 
       // Social links slide in from left
-      tl.fromTo(
-        '.social-link',
-        { x: -30, opacity: 0, scale: 0.5 },
-        { x: 0, opacity: 1, scale: 1, stagger: 0.1, duration: 0.6, ease: 'back.out(2)' },
-        '-=0.6'
-      )
+      const socialLinks = sectionRef.current?.querySelectorAll('.social-link')
+      if (socialLinks) {
+        tl.fromTo(
+          socialLinks,
+          { x: -30, opacity: 0, scale: 0.5 },
+          { x: 0, opacity: 1, scale: 1, stagger: 0.1, duration: 0.6, ease: 'back.out(2)' },
+          '-=0.6'
+        )
+      }
 
       // Scroll indicator
       tl.fromTo(
@@ -92,9 +160,8 @@ export function HeroSection() {
         '-=0.3'
       )
 
-      // --- Scroll-driven parallax animations ---
+      // --- Scroll-driven parallax ---
 
-      // Video zoom on scroll
       ScrollTrigger.create({
         trigger: sectionRef.current,
         start: 'top top',
@@ -111,84 +178,41 @@ export function HeroSection() {
         },
       })
 
-      // Image parallax - moves up and fades while scaling down
-      gsap.to(imageRef.current, {
-        yPercent: -60,
-        scale: 0.6,
-        opacity: 0,
-        filter: 'blur(10px)',
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top top',
-          end: '80% top',
-          scrub: 1.5,
-        },
-      })
-
-      // Heading moves up faster (parallax depth)
       gsap.to(headingRef.current, {
         yPercent: -100,
         opacity: 0,
         scale: 0.9,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top top',
-          end: '60% top',
-          scrub: 1,
-        },
+        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: '60% top', scrub: 1 },
       })
 
-      // Subtitle parallax (different speed)
       gsap.to(subtitleRef.current, {
         yPercent: -40,
         opacity: 0,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top top',
-          end: '50% top',
-          scrub: 0.8,
-        },
+        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: '50% top', scrub: 0.8 },
       })
 
-      // CTA buttons scatter on scroll
-      gsap.to('.cta-btn', {
-        y: -80,
-        opacity: 0,
-        stagger: 0.05,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: '10% top',
-          end: '50% top',
-          scrub: 1,
-        },
-      })
+      if (ctaBtns) {
+        gsap.to(ctaBtns, {
+          y: -80, opacity: 0, stagger: 0.05,
+          scrollTrigger: { trigger: sectionRef.current, start: '10% top', end: '50% top', scrub: 1 },
+        })
+      }
 
-      // Social links slide out
       gsap.to(socialsRef.current, {
-        x: -60,
-        opacity: 0,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: '10% top',
-          end: '40% top',
-          scrub: 1,
-        },
+        x: -60, opacity: 0,
+        scrollTrigger: { trigger: sectionRef.current, start: '10% top', end: '40% top', scrub: 1 },
       })
 
-      // Overlay darkens on scroll
       gsap.to(overlayRef.current, {
         opacity: 0.95,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 1,
-        },
+        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 1 },
       })
     }, sectionRef)
 
     return () => ctx.revert()
   }, [])
+
+  const nameChars = 'Tamilarasan'.split('')
 
   return (
     <section
@@ -209,7 +233,6 @@ export function HeroSection() {
         >
           <source src="/videos/hero-bg.mp4" type="video/mp4" />
         </video>
-        {/* Fallback gradient while video loads */}
         <div
           className="absolute inset-0"
           style={{
@@ -230,120 +253,93 @@ export function HeroSection() {
         }}
       />
 
-      {/* Radial spotlight effect */}
+      {/* Radial spotlight */}
       <div
         className="absolute inset-0 z-[2]"
-        style={{
-          background: 'radial-gradient(ellipse 50% 50% at 50% 45%, oklch(0.15 0.1 260 / 0.4), transparent)',
-        }}
+        style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 45%, oklch(0.15 0.1 260 / 0.4), transparent)' }}
       />
 
-      {/* Scan lines effect */}
+      {/* Scan lines */}
       <div
         className="absolute inset-0 z-[3] pointer-events-none"
-        style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, oklch(0 0 0 / 0.03) 2px, oklch(0 0 0 / 0.03) 4px)',
-        }}
+        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, oklch(0 0 0 / 0.03) 2px, oklch(0 0 0 / 0.03) 4px)' }}
       />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-6 px-4 text-center max-w-5xl mx-auto">
-        {/* Hero Image */}
-        <div ref={imageRef} className="relative mb-2" style={{ opacity: 0 }}>
-          <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full overflow-hidden">
-            <Image
-              src="/images/hero.png"
-              alt="Tamilarasan - Senior Software Engineer"
-              fill
-              className="object-cover object-top scale-110"
-              priority
-              sizes="(max-width: 768px) 256px, (max-width: 1024px) 320px, 384px"
-            />
-            {/* Inner shadow */}
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{
-                boxShadow: 'inset 0 0 60px oklch(0.04 0.02 260 / 0.5)',
-              }}
-            />
-          </div>
-          {/* Animated glow rings */}
-          <div
-            className="absolute -inset-2 rounded-full animate-pulse-glow"
-            style={{
-              border: '1px solid oklch(0.65 0.25 260 / 0.25)',
-              boxShadow: '0 0 60px oklch(0.65 0.25 260 / 0.15), inset 0 0 60px oklch(0.65 0.25 260 / 0.05)',
-            }}
-          />
-          <div
-            className="absolute -inset-4 rounded-full"
-            style={{
-              border: '1px solid oklch(0.55 0.28 200 / 0.1)',
-              animation: 'pulse-glow 4s ease-in-out infinite 1s',
-            }}
-          />
-          {/* Orbiting dot */}
-          <div
-            className="absolute -inset-6 rounded-full"
-            style={{ animation: 'spin 8s linear infinite' }}
-          >
-            <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
-              style={{
-                background: 'oklch(0.65 0.25 260)',
-                boxShadow: '0 0 12px oklch(0.65 0.25 260 / 0.8)',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Heading */}
+      <div className="relative z-10 flex flex-col items-center gap-6 px-4 text-center max-w-6xl mx-auto">
         <div ref={headingRef}>
-          <div className="overflow-hidden">
-            <div className="hero-line" style={{ opacity: 0 }}>
-              <span
-                className="text-sm md:text-base tracking-[0.4em] uppercase font-light inline-block"
-                style={{ color: 'oklch(0.55 0.15 200)' }}
-              >
-                Senior Software Engineer
+          {/* Typewriter — code-style font */}
+          <div className="overflow-hidden mb-5">
+            <div className="hero-typewriter" style={{ opacity: 0 }}>
+              <span className="font-code text-sm md:text-base tracking-[0.3em] uppercase inline-flex items-center gap-2">
+                <span style={{ color: 'oklch(0.45 0.1 200)' }}>{'>'}</span>
+                <span ref={typewriterRef} style={{ color: 'oklch(0.65 0.25 260)' }}></span>
+                <span className="typewriter-cursor" />
               </span>
             </div>
           </div>
-          <div className="overflow-hidden mt-3">
-            <div className="hero-line" style={{ opacity: 0 }}>
+
+          {/* Name — code font with decorative brackets */}
+          <div className="overflow-hidden">
+            <div className="flex items-center justify-center gap-3 md:gap-5">
+              {/* Opening bracket */}
+              <span
+                className="hero-bracket code-bracket text-4xl md:text-6xl lg:text-8xl"
+                style={{ color: 'oklch(0.45 0.15 260)', opacity: 0 }}
+              >
+                {'<'}
+              </span>
+
               <h1
-                className="text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-tighter leading-none"
+                ref={nameRef}
+                className="font-code text-5xl md:text-7xl lg:text-[8rem] font-bold tracking-tight leading-none"
                 style={{ color: 'oklch(0.97 0.01 260)' }}
               >
-                Tamilarasan
+                {nameChars.map((char, i) => (
+                  <span key={i} className="hero-char inline-block" style={{ opacity: 0 }}>
+                    {char}
+                  </span>
+                ))}
               </h1>
+
+              {/* Closing bracket */}
+              <span
+                className="hero-bracket code-bracket text-4xl md:text-6xl lg:text-8xl"
+                style={{ color: 'oklch(0.45 0.15 260)', opacity: 0 }}
+              >
+                {'/>'}
+              </span>
             </div>
           </div>
-          <div className="overflow-hidden mt-2">
-            <div className="hero-line" style={{ opacity: 0 }}>
-              <p className="text-lg md:text-2xl font-light tracking-widest uppercase" style={{ color: 'oklch(0.5 0.1 260)' }}>
-                React & Next.js Architect
-              </p>
-            </div>
+
+          {/* Role — styled as code comment */}
+          <div className="overflow-hidden mt-4">
+            <p className="hero-role-text font-code text-base md:text-xl tracking-wider" style={{ opacity: 0 }}>
+              <span style={{ color: 'oklch(0.4 0.08 200)' }}>{'// '}</span>
+              <span style={{ color: 'oklch(0.55 0.15 200)' }}>React</span>
+              <span style={{ color: 'oklch(0.4 0.05 260)' }}>{' & '}</span>
+              <span style={{ color: 'oklch(0.55 0.15 200)' }}>Next.js</span>
+              <span style={{ color: 'oklch(0.4 0.05 260)' }}>{' Architect'}</span>
+            </p>
           </div>
         </div>
 
-        {/* Subtitle */}
-        <div ref={subtitleRef} className="mt-2" style={{ opacity: 0 }}>
-          <p
-            className="max-w-2xl text-base md:text-lg leading-relaxed"
-            style={{ color: 'oklch(0.55 0.03 260)' }}
-          >
-            Building scalable, high-performance web applications with
-            modern frontend architecture, AI-driven solutions, and cinematic user experiences.
+        {/* Description with keyword highlights */}
+        <div ref={subtitleRef} className="mt-3" style={{ opacity: 0 }}>
+          <p className="max-w-2xl text-base md:text-lg leading-relaxed font-light" style={{ color: 'oklch(0.5 0.03 260)' }}>
+            Building{' '}
+            <span className="font-code text-sm" style={{ color: 'oklch(0.65 0.25 260)' }}>scalable</span>,{' '}
+            <span className="font-code text-sm" style={{ color: 'oklch(0.55 0.28 200)' }}>high-performance</span>{' '}
+            web applications with modern frontend architecture, AI-driven solutions, and cinematic user experiences.
           </p>
         </div>
 
-        {/* CTA buttons */}
-        <div ref={ctaRef} className="flex items-center gap-4 mt-4">
+        {/* CTA Buttons — animated */}
+        <div ref={ctaRef} className="flex items-center gap-5 mt-6">
+          {/* View Projects — primary with animated border + arrow */}
           <a
             href="#projects"
-            className="cta-btn group relative px-8 py-3.5 rounded-full font-medium text-sm tracking-wider uppercase overflow-hidden transition-all duration-500 hover:shadow-[0_0_40px_oklch(0.65_0.25_260_/_0.4)]"
+            className="cta-btn btn-glow-border btn-pulse-glow group relative px-8 py-3.5 rounded-full font-code font-medium text-sm tracking-wider uppercase overflow-visible transition-all duration-500"
             style={{ opacity: 0 }}
             onClick={(e) => {
               e.preventDefault()
@@ -351,23 +347,28 @@ export function HeroSection() {
             }}
           >
             <div
-              className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
-              style={{
-                background: 'linear-gradient(135deg, oklch(0.55 0.25 260), oklch(0.5 0.2 240))',
-              }}
+              className="absolute inset-0 rounded-full transition-all duration-500 group-hover:scale-105"
+              style={{ background: 'linear-gradient(135deg, oklch(0.55 0.25 260), oklch(0.45 0.2 240))' }}
             />
-            <span className="relative z-10" style={{ color: 'oklch(0.98 0 0)' }}>View Projects</span>
+            <span className="relative z-10 flex items-center gap-2" style={{ color: 'oklch(0.98 0 0)' }}>
+              View Projects
+              <ArrowRight className="cta-arrow w-4 h-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+            </span>
           </a>
+
+          {/* Contact Me — outline with glow */}
           <a
             href="#contact"
-            className="cta-btn px-8 py-3.5 rounded-full font-medium text-sm tracking-wider uppercase glow-border transition-all duration-500 hover:scale-105 hover:shadow-[0_0_30px_oklch(0.65_0.25_260_/_0.2)]"
-            style={{ color: 'oklch(0.65 0.25 260)', opacity: 0 }}
+            className="cta-btn btn-glow-border group relative px-8 py-3.5 rounded-full font-code font-medium text-sm tracking-wider uppercase overflow-visible transition-all duration-500 hover:scale-105"
+            style={{ opacity: 0 }}
             onClick={(e) => {
               e.preventDefault()
               document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' })
             }}
           >
-            Contact Me
+            <span className="relative z-10 transition-colors duration-300" style={{ color: 'oklch(0.65 0.25 260)' }}>
+              Contact Me
+            </span>
           </a>
         </div>
       </div>
@@ -414,16 +415,13 @@ export function HeroSection() {
         className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10"
         style={{ opacity: 0 }}
       >
-        <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: 'oklch(0.4 0.05 260)' }}>
+        <span className="font-code text-[10px] tracking-[0.4em] uppercase" style={{ color: 'oklch(0.4 0.05 260)' }}>
           Scroll to explore
         </span>
         <div className="w-5 h-8 rounded-full flex items-start justify-center pt-1.5" style={{ border: '1px solid oklch(0.3 0.08 260)' }}>
           <div
             className="w-1 h-2 rounded-full"
-            style={{
-              background: 'oklch(0.65 0.25 260)',
-              animation: 'scrollDot 2s ease-in-out infinite',
-            }}
+            style={{ background: 'oklch(0.65 0.25 260)', animation: 'scrollDot 2s ease-in-out infinite' }}
           />
         </div>
       </div>

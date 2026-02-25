@@ -54,21 +54,25 @@ const OPEN_TO = [
   'Startup Collaborations',
 ]
 
+// Key words that get scale pulse
+const PULSE_WORDS = ['technical', 'depth,', 'architectural', 'thinking,', 'UI', 'craftsmanship', 'connect.']
+
 export function ContactSection() {
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Big CTA text reveal word by word
+      // Enhanced word-by-word reveal with scale pulse on key words
       const ctaWords = sectionRef.current?.querySelectorAll('.cta-word')
       if (ctaWords) {
         gsap.fromTo(
           ctaWords,
-          { opacity: 0.1, y: 30, filter: 'blur(4px)' },
+          { opacity: 0.08, y: 30, filter: 'blur(4px)', scale: 0.9 },
           {
             opacity: 1,
             y: 0,
             filter: 'blur(0px)',
+            scale: 1,
             stagger: 0.03,
             scrollTrigger: {
               trigger: '.contact-cta',
@@ -78,6 +82,28 @@ export function ContactSection() {
             },
           }
         )
+
+        // Scale pulse on key words after reveal
+        ctaWords.forEach((word) => {
+          if (word.classList.contains('cta-pulse')) {
+            gsap.fromTo(
+              word,
+              { scale: 1 },
+              {
+                scale: 1.15,
+                duration: 0.3,
+                yoyo: true,
+                repeat: 1,
+                ease: 'power2.inOut',
+                scrollTrigger: {
+                  trigger: word,
+                  start: 'top 60%',
+                  toggleActions: 'play none none none',
+                },
+              }
+            )
+          }
+        })
       }
 
       // Contact cards fly in from sides
@@ -121,7 +147,7 @@ export function ContactSection() {
             scrollTrigger: {
               trigger: openItems[0],
               start: 'top 90%',
-              toggleActions: 'play none none reverse',
+              once: true,
             },
           }
         )
@@ -148,6 +174,9 @@ export function ContactSection() {
 
   return (
     <section ref={sectionRef} id="contact" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       <div
         className="contact-glow absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-5"
         style={{ background: 'radial-gradient(circle, oklch(0.65 0.25 260), transparent)', filter: 'blur(100px)' }}
@@ -159,12 +188,17 @@ export function ContactSection() {
         <div className="contact-cta mb-16">
           <p className="text-2xl md:text-3xl font-bold leading-relaxed">
             {ctaText.split(' ').map((word, i) => {
+              const isPulse = PULSE_WORDS.some(pw => word.includes(pw))
               let color = 'oklch(0.75 0.02 260)'
               if (['technical', 'depth,'].includes(word)) color = 'oklch(0.65 0.25 260)'
               if (['architectural', 'thinking,'].includes(word)) color = 'oklch(0.55 0.28 200)'
               if (['UI', 'craftsmanship'].includes(word)) color = 'oklch(0.65 0.25 260)'
               return (
-                <span key={i} className="cta-word inline-block mr-[0.3em]" style={{ color }}>
+                <span
+                  key={i}
+                  className={`cta-word inline-block mr-[0.3em] ${isPulse ? 'cta-pulse' : ''}`}
+                  style={{ color }}
+                >
                   {word}
                 </span>
               )

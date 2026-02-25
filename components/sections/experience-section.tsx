@@ -11,9 +11,9 @@ if (typeof window !== 'undefined') {
 }
 
 const IMPACTS = [
-  { icon: TrendingUp, text: 'Reduced application load time by 45%', color: 'oklch(0.55 0.28 200)' },
-  { icon: Bug, text: 'Reduced production bugs by 60%', color: 'oklch(0.65 0.25 260)' },
-  { icon: Smartphone, text: 'Improved mobile retention by 35%', color: 'oklch(0.55 0.28 200)' },
+  { icon: TrendingUp, text: 'Reduced application load time by 45%', value: 45, color: 'oklch(0.55 0.28 200)' },
+  { icon: Bug, text: 'Reduced production bugs by 60%', value: 60, color: 'oklch(0.65 0.25 260)' },
+  { icon: Smartphone, text: 'Improved mobile retention by 35%', value: 35, color: 'oklch(0.55 0.28 200)' },
 ]
 
 const RESPONSIBILITIES = [
@@ -48,24 +48,45 @@ export function ExperienceSection() {
         }
       )
 
-      // Timeline dot pulses in
-      gsap.fromTo(
-        '.timeline-dot',
-        { scale: 0, opacity: 0 },
-        {
-          scale: 1,
-          opacity: 1,
-          duration: 0.8,
-          ease: 'back.out(3)',
-          scrollTrigger: {
-            trigger: '.timeline-dot',
-            start: 'top 70%',
-            toggleActions: 'play none none reverse',
-          },
-        }
-      )
+      // Timeline milestone dots light up sequentially
+      const timelineDots = sectionRef.current?.querySelectorAll('.timeline-dot')
+      if (timelineDots) {
+        timelineDots.forEach((dot, i) => {
+          gsap.fromTo(
+            dot,
+            { scale: 0, opacity: 0 },
+            {
+              scale: 1,
+              opacity: 1,
+              duration: 0.8,
+              ease: 'back.out(3)',
+              scrollTrigger: {
+                trigger: dot,
+                start: 'top 70%',
+                once: true,
+              },
+              delay: i * 0.2,
+            }
+          )
+          // Glow pulse on scroll enter
+          gsap.fromTo(
+            dot,
+            { boxShadow: '0 0 0px oklch(0.65 0.25 260 / 0)' },
+            {
+              boxShadow: '0 0 25px oklch(0.65 0.25 260 / 0.8)',
+              duration: 0.6,
+              scrollTrigger: {
+                trigger: dot,
+                start: 'top 70%',
+                once: true,
+              },
+              delay: i * 0.2 + 0.3,
+            }
+          )
+        })
+      }
 
-      // Experience card slides in from left with rotation
+      // Experience card slides in
       gsap.fromTo(
         '.exp-card-main',
         { x: -100, opacity: 0, rotateY: -8, transformPerspective: 1000 },
@@ -84,31 +105,30 @@ export function ExperienceSection() {
         }
       )
 
-      // Responsibilities draw in one by one with connecting lines
+      // Responsibilities with clip-path left-wipe reveal
       const items = sectionRef.current?.querySelectorAll('.resp-item')
       if (items) {
         items.forEach((item, i) => {
           gsap.fromTo(
             item,
-            { x: -60, opacity: 0, filter: 'blur(4px)' },
+            { clipPath: 'inset(0 100% 0 0)', opacity: 0 },
             {
-              x: 0,
+              clipPath: 'inset(0 0% 0 0)',
               opacity: 1,
-              filter: 'blur(0px)',
               duration: 0.8,
               ease: 'power2.out',
               scrollTrigger: {
                 trigger: item,
                 start: 'top 88%',
-                toggleActions: 'play none none reverse',
+                once: true,
               },
-              delay: i * 0.05,
+              delay: i * 0.06,
             }
           )
         })
       }
 
-      // Impact cards fly in with spring effect
+      // Impact cards with number counter animation
       const impactCards = sectionRef.current?.querySelectorAll('.impact-card')
       if (impactCards) {
         impactCards.forEach((card, i) => {
@@ -125,11 +145,32 @@ export function ExperienceSection() {
               scrollTrigger: {
                 trigger: card,
                 start: 'top 90%',
-                toggleActions: 'play none none reverse',
+                once: true,
               },
               delay: i * 0.15,
             }
           )
+
+          // Counter animation for impact numbers
+          const numEl = card.querySelector('.impact-num')
+          if (numEl) {
+            const target = parseInt(numEl.getAttribute('data-target') || '0')
+            ScrollTrigger.create({
+              trigger: card,
+              start: 'top 85%',
+              once: true,
+              onEnter: () => {
+                gsap.from({ val: 0 }, {
+                  val: target,
+                  duration: 2,
+                  ease: 'power2.out',
+                  onUpdate: function () {
+                    numEl.textContent = Math.round(this.targets()[0].val) + '%'
+                  },
+                })
+              },
+            })
+          }
         })
       }
 
@@ -158,11 +199,14 @@ export function ExperienceSection() {
 
   return (
     <section ref={sectionRef} id="experience" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       <div className="max-w-6xl mx-auto">
         <SectionHeading number="03" title="Experience" subtitle="Where I have been building" />
 
         <div className="relative flex gap-8">
-          {/* Timeline line */}
+          {/* Timeline line with multiple dots */}
           <div className="hidden md:block relative w-px flex-shrink-0">
             <div
               className="timeline-line absolute top-0 left-0 w-full h-full"
@@ -170,12 +214,18 @@ export function ExperienceSection() {
                 background: 'linear-gradient(180deg, oklch(0.65 0.25 260), oklch(0.55 0.28 200), transparent)',
               }}
             />
+            {/* Milestone dots */}
             <div
               className="timeline-dot absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
-              style={{
-                background: 'oklch(0.65 0.25 260)',
-                boxShadow: '0 0 20px oklch(0.65 0.25 260 / 0.6)',
-              }}
+              style={{ background: 'oklch(0.65 0.25 260)' }}
+            />
+            <div
+              className="timeline-dot absolute top-[40%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
+              style={{ background: 'oklch(0.55 0.28 200)' }}
+            />
+            <div
+              className="timeline-dot absolute top-[75%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
+              style={{ background: 'oklch(0.65 0.25 260)' }}
             />
           </div>
 
@@ -187,7 +237,7 @@ export function ExperienceSection() {
                   <h3 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ color: 'oklch(0.95 0.01 260)' }}>
                     Senior Software Engineer
                   </h3>
-                  <p className="text-lg font-medium mt-1" style={{ color: 'oklch(0.65 0.25 260)' }}>
+                  <p className="text-lg font-medium mt-1 gradient-text-animated">
                     10xScale.ai
                   </p>
                 </div>
@@ -221,14 +271,19 @@ export function ExperienceSection() {
                 Key Impact
               </h4>
               <div className="grid md:grid-cols-3 gap-4">
-                {IMPACTS.map(({ icon: Icon, text, color }) => (
+                {IMPACTS.map(({ icon: Icon, text, value, color }) => (
                   <div
                     key={text}
                     className="impact-card glass rounded-xl p-5 flex items-start gap-4 transition-all duration-500 hover:scale-105 hover:shadow-[0_0_30px_oklch(0.65_0.25_260_/_0.1)]"
                     style={{ opacity: 0 }}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color }} />
-                    <span className="text-sm leading-relaxed" style={{ color: 'oklch(0.75 0.02 260)' }}>{text}</span>
+                    <div>
+                      <span className="impact-num text-xl font-bold block mb-1" data-target={value} style={{ color }}>
+                        0%
+                      </span>
+                      <span className="text-xs leading-relaxed" style={{ color: 'oklch(0.6 0.03 260)' }}>{text.replace(/\d+%/, '').trim()}</span>
+                    </div>
                   </div>
                 ))}
               </div>

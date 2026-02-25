@@ -24,15 +24,14 @@ export function AboutSection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Text block parallax reveal with horizontal slide
+      // Text block clip-path reveal (wipe up)
       gsap.fromTo(
         textBlockRef.current,
-        { y: 120, opacity: 0, x: -60 },
+        { clipPath: 'inset(100% 0 0 0)', opacity: 0 },
         {
-          y: 0,
+          clipPath: 'inset(0% 0 0 0)',
           opacity: 1,
-          x: 0,
-          duration: 1.2,
+          duration: 1.5,
           ease: 'power3.out',
           scrollTrigger: {
             trigger: textBlockRef.current,
@@ -59,7 +58,7 @@ export function AboutSection() {
             scrollTrigger: {
               trigger: textBlockRef.current,
               start: 'top 75%',
-              toggleActions: 'play none none reverse',
+              once: true,
             },
           }
         )
@@ -81,7 +80,7 @@ export function AboutSection() {
               scrollTrigger: {
                 trigger: tag,
                 start: 'top 90%',
-                toggleActions: 'play none none reverse',
+                once: true,
               },
               delay: i * 0.08,
             }
@@ -112,14 +111,14 @@ export function AboutSection() {
               scrollTrigger: {
                 trigger: cardsRef.current,
                 start: 'top 80%',
-                toggleActions: 'play none none reverse',
+                once: true,
               },
               delay: i * 0.15,
             }
           )
         })
 
-        // Counter animation for stat values
+        // Counter animation for stat values with elastic spring easing
         cards.forEach((card) => {
           const valueEl = card.querySelector('.stat-value')
           if (valueEl) {
@@ -135,8 +134,8 @@ export function AboutSection() {
                 onEnter: () => {
                   gsap.from({ val: 0 }, {
                     val: targetNum,
-                    duration: 2,
-                    ease: 'power2.out',
+                    duration: 2.5,
+                    ease: 'elastic.out(1, 0.5)',
                     onUpdate: function () {
                       valueEl.textContent = Math.round(this.targets()[0].val) + suffix
                     },
@@ -179,6 +178,9 @@ export function AboutSection() {
 
   return (
     <section ref={sectionRef} id="about" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       {/* Background decorative elements */}
       <div
         className="about-bg-circle-1 absolute top-20 right-0 w-96 h-96 rounded-full opacity-10"
@@ -194,13 +196,26 @@ export function AboutSection() {
           filter: 'blur(60px)',
         }}
       />
+      {/* Extra parallax code symbol layer */}
+      <div
+        className="about-bg-circle-1 absolute top-1/3 left-1/4 text-6xl font-mono pointer-events-none select-none"
+        style={{ color: 'oklch(0.65 0.25 260)', opacity: 0.03 }}
+      >
+        {'</>'}
+      </div>
+      <div
+        className="about-bg-circle-2 absolute bottom-1/4 right-1/4 text-5xl font-mono pointer-events-none select-none"
+        style={{ color: 'oklch(0.55 0.28 200)', opacity: 0.03 }}
+      >
+        {'{ }'}
+      </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto relative">
         <SectionHeading number="01" title="About Me" subtitle="Who I am & what drives me" />
 
         <div className="grid md:grid-cols-2 gap-16 items-start">
           {/* Text content */}
-          <div ref={textBlockRef} className="space-y-6" style={{ opacity: 0 }}>
+          <div ref={textBlockRef} className="space-y-6">
             <p className="about-para text-lg leading-relaxed" style={{ color: 'oklch(0.7 0.02 260)' }}>
               I am <span className="font-semibold" style={{ color: 'oklch(0.95 0.01 260)' }}>Tamilarasan</span>, a results-driven Senior Software Engineer with 3+ years of hands-on experience building scalable, high-performance web applications.
             </p>

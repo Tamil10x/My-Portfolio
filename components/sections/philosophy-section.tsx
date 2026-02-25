@@ -22,21 +22,31 @@ export function PhilosophySection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Split quote words and animate each
       const quoteWords = quoteRef.current?.querySelectorAll('.quote-word')
-      if (quoteWords) {
+
+      // Pin the section while quote reveals word-by-word
+      if (quoteWords && quoteRef.current) {
+        const st = ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top top',
+          end: '+=150%',
+          pin: true,
+          anticipatePin: 1,
+          scrub: 1,
+        })
+
         gsap.fromTo(
           quoteWords,
-          { opacity: 0.1, y: 20, filter: 'blur(4px)' },
+          { opacity: 0.08, y: 20, filter: 'blur(6px)' },
           {
             opacity: 1,
             y: 0,
             filter: 'blur(0px)',
-            stagger: 0.04,
+            stagger: 0.05,
             scrollTrigger: {
-              trigger: quoteRef.current,
-              start: 'top 80%',
-              end: 'top 30%',
+              trigger: sectionRef.current,
+              start: 'top top',
+              end: '+=100%',
               scrub: 1,
             },
           }
@@ -46,13 +56,13 @@ export function PhilosophySection() {
       // Quote container scale
       gsap.fromTo(
         quoteRef.current,
-        { scale: 0.9 },
+        { scale: 0.85 },
         {
           scale: 1,
           scrollTrigger: {
-            trigger: quoteRef.current,
-            start: 'top 80%',
-            end: 'top 40%',
+            trigger: sectionRef.current,
+            start: 'top top',
+            end: '+=80%',
             scrub: 1,
           },
         }
@@ -72,9 +82,9 @@ export function PhilosophySection() {
               duration: 1,
               ease: 'power3.out',
               scrollTrigger: {
-                trigger: item,
-                start: 'top 88%',
-                end: 'top 70%',
+                trigger: sectionRef.current,
+                start: `top+=${60 + i * 12}% top`,
+                end: `top+=${70 + i * 12}% top`,
                 scrub: 1,
               },
             }
@@ -104,13 +114,16 @@ export function PhilosophySection() {
   const quotePart3 = 'with clarity, performance, and purpose.'.split(' ')
 
   return (
-    <section ref={sectionRef} className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-screen flex items-center py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       <div
         className="philosophy-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full opacity-5"
         style={{ background: 'radial-gradient(ellipse, oklch(0.65 0.25 260), transparent)', filter: 'blur(120px)' }}
       />
 
-      <div className="max-w-4xl mx-auto text-center">
+      <div className="max-w-4xl mx-auto text-center w-full">
         <div ref={quoteRef} className="mb-20">
           <p className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tighter leading-tight">
             <span style={{ color: 'oklch(0.85 0.02 260)' }}>
@@ -119,7 +132,7 @@ export function PhilosophySection() {
               ))}
             </span>
             <br />
-            <span style={{ color: 'oklch(0.65 0.25 260)' }}>
+            <span className="gradient-text-animated" style={{ WebkitTextFillColor: 'oklch(0.65 0.25 260)' }}>
               {quotePart2.map((w, i) => (
                 <span key={`p2-${i}`} className="quote-word inline-block mr-[0.3em]">{w}</span>
               ))}

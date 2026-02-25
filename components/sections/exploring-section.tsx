@@ -26,25 +26,23 @@ export function ExploringSection() {
       const cards = sectionRef.current?.querySelectorAll('.explore-card')
       if (!cards) return
 
-      // Cards spiral in from different angles
+      // Cascade with scale (0.5→1), staggered rotation, and blur clear
       cards.forEach((card, i) => {
-        const angle = (i / cards.length) * Math.PI * 2
-        const radius = 80
         gsap.fromTo(
           card,
           {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius + 60,
+            scale: 0.5,
             opacity: 0,
-            scale: 0.7,
-            rotation: (i - 2) * 8,
+            rotation: (i - 2) * 6,
+            filter: 'blur(10px)',
+            y: 60,
           },
           {
-            x: 0,
-            y: 0,
-            opacity: 1,
             scale: 1,
+            opacity: 1,
             rotation: 0,
+            filter: 'blur(0px)',
+            y: 0,
             duration: 1.2,
             ease: 'power3.out',
             scrollTrigger: {
@@ -53,6 +51,7 @@ export function ExploringSection() {
               end: 'top 30%',
               scrub: 1,
             },
+            delay: i * 0.08,
           }
         )
       })
@@ -78,6 +77,9 @@ export function ExploringSection() {
 
   return (
     <section ref={sectionRef} id="exploring" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       <div className="max-w-6xl mx-auto">
         <SectionHeading number="05" title="Currently Exploring" subtitle="What excites me right now" />
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SectionHeading } from '@/components/section-heading'
@@ -72,11 +72,37 @@ const PROJECTS = [
 function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index: number }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [isHovered, setIsHovered] = useState(false)
+  const glowLineRef = useRef<HTMLDivElement>(null)
+
+  // 3D tilt on mouse move
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    gsap.to(cardRef.current, {
+      rotateY: x * 12,
+      rotateX: -y * 8,
+      transformPerspective: 800,
+      duration: 0.4,
+      ease: 'power2.out',
+    })
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    if (!cardRef.current) return
+    setIsHovered(false)
+    gsap.to(cardRef.current, {
+      rotateY: 0,
+      rotateX: 0,
+      duration: 0.6,
+      ease: 'elastic.out(1, 0.5)',
+    })
+  }, [])
 
   useEffect(() => {
     if (!cardRef.current) return
 
-    // Each card animates from alternating directions
     const isEven = index % 2 === 0
     gsap.fromTo(
       cardRef.current,
@@ -84,17 +110,12 @@ function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index:
         y: 100,
         x: isEven ? -50 : 50,
         opacity: 0,
-        rotateY: isEven ? -5 : 5,
-        rotateX: 3,
-        transformPerspective: 800,
         filter: 'blur(6px)',
       },
       {
         y: 0,
         x: 0,
         opacity: 1,
-        rotateY: 0,
-        rotateX: 0,
         filter: 'blur(0px)',
         duration: 1.2,
         ease: 'power3.out',
@@ -106,32 +127,53 @@ function ProjectCard({ project, index }: { project: (typeof PROJECTS)[0]; index:
         },
       }
     )
+
+    // Glow accent line traces top border on scroll
+    if (glowLineRef.current) {
+      gsap.fromTo(
+        glowLineRef.current,
+        { scaleX: 0, transformOrigin: 'left' },
+        {
+          scaleX: 1,
+          duration: 1.5,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: cardRef.current,
+            start: 'top 75%',
+            once: true,
+          },
+        }
+      )
+    }
   }, [index])
 
   return (
     <div
       ref={cardRef}
-      className="group glass rounded-2xl overflow-hidden transition-all duration-500 cursor-pointer"
+      className="group glass rounded-2xl overflow-hidden transition-shadow duration-500 cursor-pointer"
       style={{
         opacity: 0,
         boxShadow: isHovered ? `0 0 50px ${project.color}22, 0 20px 40px oklch(0 0 0 / 0.3)` : 'none',
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+        transformStyle: 'preserve-3d',
       }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Top accent line */}
+      {/* Top accent line — glowing trace */}
       <div
-        className="h-px transition-all duration-700"
+        ref={glowLineRef}
+        className="h-px"
         style={{
-          background: isHovered ? `linear-gradient(90deg, transparent, ${project.color}, transparent)` : 'transparent',
+          background: `linear-gradient(90deg, transparent, ${project.color}, transparent)`,
+          boxShadow: `0 0 8px ${project.color}`,
         }}
       />
 
       <div className="p-6 md:p-8">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <span className="text-xs font-mono tracking-wider" style={{ color: project.color }}>
+            <span className="text-xs font-mono tracking-wider gradient-text-animated">
               {String(index + 1).padStart(2, '0')}
             </span>
             <h3
@@ -205,6 +247,9 @@ export function ProjectsSection() {
 
   return (
     <section ref={sectionRef} id="projects" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       <div
         className="projects-bg-glow absolute top-40 left-1/4 w-[500px] h-[500px] rounded-full opacity-5"
         style={{ background: 'radial-gradient(circle, oklch(0.55 0.28 200), transparent)', filter: 'blur(120px)' }}

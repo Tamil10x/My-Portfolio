@@ -28,24 +28,18 @@ export function DifferentiatorsSection() {
       const items = sectionRef.current?.querySelectorAll('.diff-item')
       if (!items) return
 
-      // Items cascade in like a waterfall - each slightly delayed and from different x offset
+      // Horizontal clip-path wipe reveal per item
       items.forEach((item, i) => {
         gsap.fromTo(
           item,
           {
-            x: -80 + i * 10,
-            y: 40,
+            clipPath: 'inset(0 100% 0 0)',
             opacity: 0,
-            scale: 0.95,
-            filter: 'blur(3px)',
           },
           {
-            x: 0,
-            y: 0,
+            clipPath: 'inset(0 0% 0 0)',
             opacity: 1,
-            scale: 1,
-            filter: 'blur(0px)',
-            duration: 0.8,
+            duration: 1,
             ease: 'power3.out',
             scrollTrigger: {
               trigger: item,
@@ -71,7 +65,7 @@ export function DifferentiatorsSection() {
             scrollTrigger: {
               trigger: bar,
               start: 'top 85%',
-              toggleActions: 'play none none reverse',
+              once: true,
             },
           }
         )
@@ -83,6 +77,9 @@ export function DifferentiatorsSection() {
 
   return (
     <section ref={sectionRef} id="differentiators" className="relative py-32 md:py-48 px-6 md:px-12 lg:px-24 overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+
       <div className="max-w-4xl mx-auto">
         <SectionHeading number="06" title="What Sets Me Apart" subtitle="The difference I bring" />
 
@@ -111,7 +108,7 @@ export function DifferentiatorsSection() {
                 {text}
               </span>
               <div className="ml-auto hidden md:block">
-                <span className="text-xs font-mono" style={{ color: 'oklch(0.3 0.05 260)' }}>
+                <span className="text-xs font-mono gradient-text-animated">
                   {String(i + 1).padStart(2, '0')}
                 </span>
               </div>
