@@ -3,6 +3,8 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getServices, Service } from '../../lib/dataAdapter';
 import { BrainCircuit, LayoutTemplate, Server } from 'lucide-react';
+import VoiceAgentPlayground from '../ui/VoiceAgentPlayground';
+import RagDebugger from '../ui/RagDebugger';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,6 +18,7 @@ export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
   const sectionRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [activeGenAiTab, setActiveGenAiTab] = useState<'voice' | 'rag'>('voice');
 
   useEffect(() => {
     getServices().then(setServices);
@@ -123,6 +126,38 @@ export default function Services() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Render Interactive Switchable Sandbox Console on GenAI Card */}
+                {service.id === 'genai' && (
+                  <div className="mt-8 border-t border-white/5 pt-6">
+                    {/* High-tech selector switcher */}
+                    <div className="flex gap-2 font-mono text-[9px] uppercase tracking-wider mb-4 border-b border-white/5 pb-2">
+                      <button
+                        onClick={() => setActiveGenAiTab('voice')}
+                        className={`px-3 py-1 rounded-md border transition-all duration-300 cursor-pointer ${
+                          activeGenAiTab === 'voice'
+                            ? 'border-[var(--color-accent-cyan)]/30 bg-[var(--color-accent-cyan)]/10 text-[var(--color-accent-cyan)] font-semibold'
+                            : 'border-white/5 text-white/40 hover:text-white'
+                        }`}
+                      >
+                        [Voice Call Simulator]
+                      </button>
+                      <button
+                        onClick={() => setActiveGenAiTab('rag')}
+                        className={`px-3 py-1 rounded-md border transition-all duration-300 cursor-pointer ${
+                          activeGenAiTab === 'rag'
+                            ? 'border-[var(--color-accent-purple)]/30 bg-[var(--color-accent-purple)]/10 text-[var(--color-accent-purple)] font-semibold'
+                            : 'border-white/5 text-white/40 hover:text-white'
+                        }`}
+                      >
+                        [RAG Pipeline Tracer]
+                      </button>
+                    </div>
+
+                    {/* Active Sandbox rendering */}
+                    {activeGenAiTab === 'voice' ? <VoiceAgentPlayground /> : <RagDebugger />}
+                  </div>
+                )}
               </div>
             </div>
           ))}

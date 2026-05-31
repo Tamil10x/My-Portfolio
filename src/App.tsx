@@ -3,6 +3,8 @@ import LenisProvider from './lib/motion/LenisProvider';
 import CustomCursor from './lib/motion/CustomCursor';
 import Background from './components/ui/Background';
 import Navbar from './components/ui/Navbar';
+import AiChatbot from './components/ui/AiChatbot';
+import CommandConsole from './components/ui/CommandConsole';
 
 // Sections
 import Hero from './components/sections/Hero';
@@ -31,6 +33,8 @@ function App() {
         <Background />
         
         <Navbar />
+        <AiChatbot />
+        <CommandConsole />
 
         <main className="relative z-10 flex flex-col">
           <Hero />
